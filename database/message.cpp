@@ -114,15 +114,17 @@ namespace database
             std::vector<Message> result;
             Message a;
             std::string sharding_hint = database::Database::sharding_hint(from,to);
+            std::string select_str = "SELECT id, id_from, id_to, message, title FROM Author where id_from=? AND id_to=? ";
+            select_str += sharding_hint;
+            std::cout << select_str << std::endl;
 
-            select << "SELECT id, id_from, id_to, message, title FROM Author where id_from=? AND id_to=? ?",
+            select << select_str,
                 into(a._id),
                 into(a._id_from),
                 into(a._id_to),
                 into(a._message),
                 use(from),
                 use(to),
-                use(sharding_hint),
                 range(0, 1); //  iterate over result set one row at a time
 
             while (!select.done())
@@ -154,11 +156,14 @@ namespace database
             Poco::Data::Statement insert(session);
             std::string sharding_hint = database::Database::sharding_hint(_id_from,_id_to);
 
-            insert << "INSERT INTO Message (id_from,id_to,message) VALUES(?, ?, ?) ?",
+            std::string select_str = "INSERT INTO Message (id_from,id_to,message) VALUES(?, ?, ?) ";
+            select_str += sharding_hint;
+            std::cout << select_str << std::endl;
+
+            insert << select_str,
                 use(_id_from),
                 use(_id_to),
                 use(_message),
-                use(sharding_hint),
                 now;
 
             Poco::Data::Statement select(session);
