@@ -114,7 +114,7 @@ namespace database
             std::vector<Message> result;
             Message a;
             std::string sharding_hint = database::Database::sharding_hint(from,to);
-            std::string select_str = "SELECT id, id_from, id_to, message, title FROM Author where id_from=? AND id_to=? ";
+            std::string select_str = "SELECT id, id_from, id_to, message FROM Message WHERE id_from=? AND id_to=? ";
             select_str += sharding_hint;
             std::cout << select_str << std::endl;
 
