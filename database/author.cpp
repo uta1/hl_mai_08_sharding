@@ -1,6 +1,5 @@
 #include "author.h"
 #include "database.h"
-#include "cache.h"
 #include "../config/config.h"
 
 #include <Poco/Data/MySQL/Connector.h>
@@ -120,48 +119,6 @@ namespace database
         }
     }
 
-    Author Author::read_from_cache_by_id(long id)
-    {
-
-        try
-        {
-            std::string result;
-            if (database::Cache::get().get(id, result))
-                return fromJSON(result);
-            else
-                throw std::logic_error("key not found in the cache");
-        }
-        catch (std::exception err)
-        {
-            //std::cout << "error:" << err.what() << std::endl;
-            throw;
-        }
-    }
-    void Author::warm_up_cache()
-    {
-        std::cout << "wharming up authors cache ...";
-        auto array = read_all();
-        long count = 0;
-        for (auto &a : array)
-        {
-            a.save_to_cache();
-            ++count;
-        }
-        std::cout << "done: " << count << std::endl;
-    }
-
-
-    size_t Author::size_of_cache(){
-        return database::Cache::get().size();
-    }
-
-    void Author::save_to_cache()
-    {
-        std::stringstream ss;
-        Poco::JSON::Stringifier::stringify(toJSON(), ss);
-        std::string message = ss.str();
-        database::Cache::get().put(_id, message);
-    }
 
     std::vector<Author> Author::read_all()
     {

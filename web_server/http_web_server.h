@@ -107,12 +107,6 @@ protected:
                 .required(false)
                 .repeatable(false)
                 .callback(OptionCallback<HTTPWebServer>(this, &HTTPWebServer::handleInitDB)));
-        options.addOption(
-            Option("cache_servers", "cs", "set ignite cache servers")
-                .required(false)
-                .repeatable(false)
-                .argument("value")
-                .callback(OptionCallback<HTTPWebServer>(this, &HTTPWebServer::handleCacheServers)));
         
     }
 
@@ -155,12 +149,6 @@ protected:
         Config::get().host() = value;
     }
 
-    void handleCacheServers([[maybe_unused]] const std::string &name,
-                       [[maybe_unused]] const std::string &value)
-    {
-        std::cout << "cache servers:" << value << std::endl;
-        Config::get().cache_servers() = value;
-    }
 
     void handleHelp([[maybe_unused]] const std::string &name,
                     [[maybe_unused]] const std::string &value)
@@ -185,8 +173,7 @@ protected:
             std::string format(
                 config().getString("HTTPWebServer.format",
                                    DateTimeFormat::SORTABLE_FORMAT));
-            
-            //database::Author::warm_up_cache();
+
 
             ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", port));
             HTTPServer srv(new HTTPRequestFactory(format),

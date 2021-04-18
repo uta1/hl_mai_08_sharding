@@ -14,6 +14,7 @@ namespace database{
         public:
             static Database& get();
             Poco::Data::Session create_session();
+            static std::string sharding_hint(long from,long to);
     };
 }
 #endif

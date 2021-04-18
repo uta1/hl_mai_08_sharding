@@ -51,7 +51,7 @@ slow_query_log_file                     = /var/log/mysql/slow.log
 # ----------------------------------------------------------------
 
 # By default we only accept connections from localhost
-#bind-address	= 127.0.0.1
+bind-address	= 0.0.0.0
 
 # Disabling symbolic-links is recommended to prevent assorted security risks
 symbolic-links=0

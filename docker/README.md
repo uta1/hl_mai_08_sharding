@@ -1,6 +1,10 @@
 # DB
 
 ## ProxySQL
+## admin mysql -uradmin -pradmin -h 127.0.0.1 -P6032 --prompt='Admin> '
+
+use main;
+show tables;
 
 Schema
 
