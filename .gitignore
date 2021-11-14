@@ -1,3 +1,4 @@
 CMakeFiles/*
+build/*
 .vscode/*
 tests.cpp

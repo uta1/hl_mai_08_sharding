@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(hl_event_server C CXX)
+project(hl_mai_08_sharding C CXX)
 
-SET (EXAMPLE_BINARY "hl_mai_06_cache")
+SET (EXAMPLE_BINARY "hl_mai_08_sharding")
 
 find_package(OpenSSL)
 find_package(GTest REQUIRED)

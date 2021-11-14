@@ -72,6 +72,10 @@ services:
       context: proxysql
       dockerfile: Dockerfile
     container_name: proxysql
+    depends_on:
+      - "db-node-1"
+      - "db-node-2"
+      - "db-node-3"
     command: >
       --initial
     volumes:

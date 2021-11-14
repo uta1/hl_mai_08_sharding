@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <exception>
+#include <fstream>
 
 using namespace Poco::Data::Keywords;
 using Poco::Data::Session;
@@ -38,6 +39,58 @@ namespace database
                         << "`title` VARCHAR(1024) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,"
                         << "PRIMARY KEY (`id`),KEY `fn` (`first_name`),KEY `ln` (`last_name`));",
                 now;
+        }
+
+        catch (Poco::Data::MySQL::ConnectionException &e)
+        {
+            std::cout << "connection:" << e.what() << std::endl;
+            throw;
+        }
+        catch (Poco::Data::MySQL::StatementException &e)
+        {
+
+            std::cout << "statement:" << e.what() << std::endl;
+            throw;
+        }
+    }
+
+    void Author::preload(const std::string &file)
+    {
+        try
+        {
+
+            Poco::Data::Session session = database::Database::get().create_session();
+            std::string json;
+            std::ifstream is(file);
+            std::istream_iterator<char> eos;
+            std::istream_iterator<char> iit(is);
+            while (iit != eos)
+                json.push_back(*(iit++));
+            is.close();
+
+            Poco::JSON::Parser parser;
+            Poco::Dynamic::Var result = parser.parse(json);
+            Poco::JSON::Array::Ptr arr = result.extract<Poco::JSON::Array::Ptr>();
+
+            size_t i{0};
+            for (i = 0; i < arr->size(); ++i)
+            {
+                Poco::JSON::Object::Ptr object = arr->getObject(i);
+                std::string first_name = object->getValue<std::string>("first_name");
+                std::string last_name = object->getValue<std::string>("last_name");
+                std::string title = object->getValue<std::string>("title");
+                std::string email = object->getValue<std::string>("email");
+                Poco::Data::Statement insert(session);
+                insert << "INSERT INTO Author (first_name,last_name,email,title) VALUES(?, ?, ?, ?)",
+                    Poco::Data::Keywords::use(first_name),
+                    Poco::Data::Keywords::use(last_name),
+                    Poco::Data::Keywords::use(email),
+                    Poco::Data::Keywords::use(title);
+
+                insert.execute();
+            }
+
+            std::cout << "Inserted " << i << " records" << std::endl;
         }
 
         catch (Poco::Data::MySQL::ConnectionException &e)
@@ -119,7 +172,6 @@ namespace database
         }
     }
 
-
     std::vector<Author> Author::read_all()
     {
         try
@@ -165,8 +217,8 @@ namespace database
             Statement select(session);
             std::vector<Author> result;
             Author a;
-            first_name+="%";
-            last_name+="%";
+            first_name += "%";
+            last_name += "%";
             select << "SELECT id, first_name, last_name, email, title FROM Author where first_name LIKE ? and last_name LIKE ?",
                 into(a._id),
                 into(a._first_name),
@@ -198,7 +250,6 @@ namespace database
         }
     }
 
-   
     void Author::save_to_mysql()
     {
 
