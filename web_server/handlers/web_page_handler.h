@@ -1,5 +1,5 @@
-#ifndef HTTPREQUESTFACTORY_H
-#define HTTPREQUESTFACTORY_H
+#ifndef WEBPAGEHANDLER_H
+#define WEBPAGEHANDLER_H
 
 #include "Poco/Net/HTTPServer.h"
 #include "Poco/Net/HTTPRequestHandler.h"
@@ -19,6 +19,8 @@
 #include "Poco/Util/OptionSet.h"
 #include "Poco/Util/HelpFormatter.h"
 #include <iostream>
+#include <iostream>
+#include <fstream>
 
 using Poco::Net::ServerSocket;
 using Poco::Net::HTTPRequestHandler;
@@ -38,38 +40,43 @@ using Poco::Util::OptionSet;
 using Poco::Util::OptionCallback;
 using Poco::Util::HelpFormatter;
 
-#include "handlers/author_handler.h"
-#include "handlers/message_handler.h"
-#include "handlers/web_page_handler.h"
-
-
-static bool startsWith(const std::string& str, const std::string& prefix)
-{
-    return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
-}
-
-
-class HTTPRequestFactory: public HTTPRequestHandlerFactory
+class WebPageHandler: public HTTPRequestHandler
 {
 public:
-    HTTPRequestFactory(const std::string& format):
-        _format(format)
+    WebPageHandler(const std::string& format): _format(format)
     {
     }
 
-    HTTPRequestHandler* createRequestHandler(
-        const HTTPServerRequest& request)
+    void handleRequest(HTTPServerRequest& request,
+                       HTTPServerResponse& response)
     {
-        static std::string author="/author"; 
-        static std::string message="/message"; 
-        if (startsWith(request.getURI(),author)) return new AuthorHandler(_format);
-        if (startsWith(request.getURI(),message)) return new MessageHandler(_format);
-        return new WebPageHandler(_format);
-        return 0;
+       // Application& app = Application::instance();
+       // app.logger().information("HTML Request from "    + request.clientAddress().toString());
+
+        response.setChunkedTransferEncoding(true);
+        response.setContentType("text/html");
+
+        std::ostream& ostr = response.send();
+
+        std::ifstream file;
+
+        auto pos = request.getURI().find('?');
+        std::string uri = request.getURI();
+        if(pos!=std::string::npos) uri = uri.substr(0,pos);
+        std::string name="content"+uri;
+        file.open(name, std::ifstream::binary);
+
+        if (file.is_open())
+            while (file.good()){
+                int sign = file.get();
+                if(sign>0)
+                ostr <<  (char)sign;
+            }
+
+        file.close();
     }
 
 private:
     std::string _format;
 };
-
-#endif
+#endif // !WEBPAGEHANDLER_H
