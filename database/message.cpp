@@ -12,6 +12,7 @@
 #include <sstream>
 #include <exception>
 #include <algorithm>
+#include <future>
 
 using namespace Poco::Data::Keywords;
 using Poco::Data::Session;
@@ -109,39 +110,61 @@ namespace database
     std::vector<long> Message::all_contact(long id)
     {
         std::vector<long> result;
+        // get all hints for shards
         std::vector<std::string> hints = database::Database::get_all_hints();
 
-        Poco::Data::Session session = database::Database::get().create_session();
+        std::vector<std::future<std::vector<long>>> futures;
+
+        // map phase in parallel
         for (const std::string &hint : hints)
         {
-            Statement select(session);
-            std::string select_str = "SELECT id_from, id_to, message FROM Message WHERE id_from=";
-            select_str += std::to_string(id);
-            select_str +=" OR id_to=";
-            select_str += std::to_string(id);
-            select_str += hint;
-            select << select_str;
+            auto handle = std::async(std::launch::async, [id, hint]() -> std::vector<long>
+                                     {
+                                         std::vector<long> result;
+                                         Poco::Data::Session session = database::Database::get().create_session();
+                                         Statement select(session);
+                                         std::string select_str = "SELECT id_from, id_to, message FROM Message WHERE id_from=";
+                                         select_str += std::to_string(id);
+                                         select_str += " OR id_to=";
+                                         select_str += std::to_string(id);
+                                         select_str += hint;
+                                         select << select_str;
 
-            select.execute();
-            Poco::Data::RecordSet record_set(select);
+                                         select.execute();
+                                         Poco::Data::RecordSet record_set(select);
 
-            bool more = record_set.moveFirst();
-            while (more)
-            {
-                long id_from = record_set[0].convert<long>(); 
-                long id_to = record_set[1].convert<long>(); 
-                if (id_from != id)
-                    result.push_back(id_from);
-                if (id_to != id)
-                    result.push_back(id_to);
-                more = record_set.moveNext();
-            }
+                                         bool more = record_set.moveFirst();
+                                         while (more)
+                                         {
+                                             long id_from = record_set[0].convert<long>();
+                                             long id_to = record_set[1].convert<long>();
+                                             if (id_from != id)
+                                                 result.push_back(id_from);
+                                             if (id_to != id)
+                                                 result.push_back(id_to);
+                                             more = record_set.moveNext();
+                                         }
+                                         return result;
+                                     });
 
+            futures.emplace_back(std::move(handle));
         }
 
+        // reduce phase
+        // get values
+        for(std::future<std::vector<long>>& res : futures){
+            std::vector<long> v= res.get();
+            std::copy(std::begin(v),
+                      std::end(v),
+                      std::back_inserter(result));
+        }
+
+        // sort
         std::vector<long> result_distincted;
         std::sort(std::begin(result), std::end(result));
         long old = -1;
+
+        // deduplicate
         std::copy_if(std::begin(result), std::end(result), std::back_inserter(result_distincted),
                      [&old](long x)
                      {
