@@ -78,6 +78,28 @@ public:
                 ostr << "{ \"result\": false , \"reason\": \"not found\" }";
                 return;
             }
+        } else if (form.has("id") && (!form.has("add")))
+        {
+            long id = atol(form.get("id").c_str());
+            try
+            {
+                std::vector<long> results = database::Message::all_contact(id);
+                std::string result_str="[";
+                for (size_t i =0; i< results.size();++i){
+                    result_str += "{ \"id\" :";
+                    result_str += std::to_string(results[i]);
+                    result_str += "}";
+                    if(i!=results.size()-1) result_str+=",";
+                }
+                result_str += "]";
+                ostr << result_str;
+                return;
+            }
+            catch (...)
+            {
+                ostr << "{ \"result\": false , \"reason\": \"not found\" }";
+                return;
+            }
         }
 
         else if (form.has("add"))

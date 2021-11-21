@@ -5,11 +5,13 @@
 #include <Poco/Data/MySQL/Connector.h>
 #include <Poco/Data/MySQL/MySQLException.h>
 #include <Poco/Data/SessionFactory.h>
+#include <Poco/Data/RecordSet.h>
 #include <Poco/JSON/Parser.h>
 #include <Poco/Dynamic/Var.h>
 
 #include <sstream>
 #include <exception>
+#include <algorithm>
 
 using namespace Poco::Data::Keywords;
 using Poco::Data::Session;
@@ -24,10 +26,9 @@ namespace database
         Poco::JSON::Object::Ptr object = result.extract<Poco::JSON::Object::Ptr>();
 
         msg.id() = object->getValue<long>("id");
-        msg.id() = object->getValue<long>("id_from");
-        msg.id() = object->getValue<long>("id_to");
+        msg.id_from() = object->getValue<long>("id_from");
+        msg.id_to() = object->getValue<long>("id_to");
         msg.message() = object->getValue<std::string>("message");
-
 
         return msg;
     }
@@ -105,6 +106,57 @@ namespace database
         }
     }
 
+    std::vector<long> Message::all_contact(long id)
+    {
+        std::vector<long> result;
+        std::vector<std::string> hints = database::Database::get_all_hints();
+
+        Poco::Data::Session session = database::Database::get().create_session();
+        for (const std::string &hint : hints)
+        {
+            Statement select(session);
+            std::string select_str = "SELECT id_from, id_to, message FROM Message WHERE id_from=";
+            select_str += std::to_string(id);
+            select_str +=" OR id_to=";
+            select_str += std::to_string(id);
+            select_str += hint;
+            select << select_str;
+
+            select.execute();
+            Poco::Data::RecordSet record_set(select);
+
+            bool more = record_set.moveFirst();
+            while (more)
+            {
+                long id_from = record_set[0].convert<long>(); 
+                long id_to = record_set[1].convert<long>(); 
+                if (id_from != id)
+                    result.push_back(id_from);
+                if (id_to != id)
+                    result.push_back(id_to);
+                more = record_set.moveNext();
+            }
+
+        }
+
+        std::vector<long> result_distincted;
+        std::sort(std::begin(result), std::end(result));
+        long old = -1;
+        std::copy_if(std::begin(result), std::end(result), std::back_inserter(result_distincted),
+                     [&old](long x)
+                     {
+                         if (x != old)
+                         {
+                             old = x;
+                             return true;
+                         }
+                         else
+                             return false;
+                     });
+
+        return result_distincted;
+    }
+
     std::vector<Message> Message::read_all(long from, long to)
     {
         try
@@ -113,7 +165,7 @@ namespace database
             Statement select(session);
             std::vector<Message> result;
             Message a;
-            std::string sharding_hint = database::Database::sharding_hint(from,to);
+            std::string sharding_hint = database::Database::sharding_hint(from, to);
             std::string select_str = "SELECT id, id_from, id_to, message FROM Message WHERE id_from=? AND id_to=? ";
             select_str += sharding_hint;
             std::cout << select_str << std::endl;
@@ -154,7 +206,7 @@ namespace database
         {
             Poco::Data::Session session = database::Database::get().create_session();
             Poco::Data::Statement insert(session);
-            std::string sharding_hint = database::Database::sharding_hint(_id_from,_id_to);
+            std::string sharding_hint = database::Database::sharding_hint(_id_from, _id_to);
 
             std::string select_str = "INSERT INTO Message (id_from,id_to,message) VALUES(?, ?, ?) ";
             select_str += sharding_hint;
@@ -190,7 +242,8 @@ namespace database
         }
     }
 
-    Poco::JSON::Object::Ptr Message::toJSON() const{
+    Poco::JSON::Object::Ptr Message::toJSON() const
+    {
         Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
 
         root->set("id", _id);
