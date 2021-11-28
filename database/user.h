@@ -9,6 +9,7 @@
 namespace database
 {
     class User{
+            static std::vector<User> search_with_hint(std::optional<std::string> first_name, std::optional<std::string> last_name, const std::string& hint);
         public:
             std::string login;
             std::string first_name;

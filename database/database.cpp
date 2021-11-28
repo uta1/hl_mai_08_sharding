@@ -18,13 +18,13 @@ namespace database{
         Poco::Data::MySQL::Connector::registerConnector();
     }
 
-    size_t Database::get_max_shard(){
+    size_t Database::shards_count(){
         return 2;
     }
 
     std::vector<std::string> Database::get_all_hints(){
         std::vector<std::string> result;
-        for(size_t i=0;i<=get_max_shard();++i){
+        for(size_t i=0;i<shards_count();++i){
             std::string shard_name = "-- sharding:";
             shard_name += std::to_string(i);
             result.push_back(shard_name);
@@ -39,7 +39,7 @@ namespace database{
         key += ";";
         key += std::to_string(to);
 
-        size_t shard_number = std::hash<std::string>{}(key)%get_max_shard();
+        size_t shard_number = std::hash<std::string>{}(key)%shards_count();
 
         std::string result = "-- sharding:";
         result += std::to_string(shard_number);
@@ -47,9 +47,7 @@ namespace database{
     }
 
     std::string Database::sharding_hint(const std::string& login){
-        std::cout << "sharding_hint..." << std::endl;
-
-        size_t shard_number = std::hash<std::string>{}(login)%get_max_shard();
+        size_t shard_number = std::hash<std::string>{}(login)%shards_count();
 
         std::string result = "-- sharding:";
         result += std::to_string(shard_number);
