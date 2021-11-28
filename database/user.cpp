@@ -5,6 +5,7 @@
 #include <Poco/Data/MySQL/Connector.h>
 #include <Poco/Data/MySQL/MySQLException.h>
 #include <Poco/Data/SessionFactory.h>
+#include <Poco/Data/RecordSet.h>
 #include <Poco/JSON/Parser.h>
 #include <Poco/Dynamic/Var.h>
 #include <Poco/LogStream.h>
@@ -88,28 +89,28 @@ namespace database
     {
         try
         {
-            std::cout << "good:)" << std::endl;
-
-            Poco::Data::Session session = database::Database::get().create_session();
-            std::cout << "good0:)" << std::endl;
+            auto db = database::Database::get();
+            Poco::Data::Session session = db.create_session();
             Poco::Data::Statement select(session);
-            std::cout << "good1:)" << std::endl;
-            User a;
-            select << "SELECT login, first_name, last_name, age FROM users WHERE login=?",
-                into(a.login),
-                into(a.first_name),
-                into(a.last_name),
-                into(a.age),
-                use(login),
-                range(0, 1); //  iterate over result set one row at a time
-            std::cout << "good2:)" << std::endl;
 
-            if (!select.done())
-            {
-                std::cout << "good3:)" << std::endl;
-                if (!select.execute()) return std::nullopt;
-            }
-            std::cout << "good4:)" << std::endl;
+            const std::string sharding_hint = db.sharding_hint(login);
+            User a;
+            std::string select_str =
+                    "SELECT login, first_name, last_name, age FROM users WHERE login='" + login + "' " + sharding_hint;
+            std::cout << "select_str:" << select_str << std::endl;
+
+            select << select_str;
+            Poco::Data::RecordSet record_set(select);
+
+            if (!select.execute()) return std::nullopt;
+
+            bool more = record_set.moveFirst();
+            if (!more) return std::nullopt;
+
+            a.login = record_set[0].convert<std::string>();
+            a.first_name = record_set[1].convert<std::string>();
+            a.last_name = record_set[2].convert<std::string>();
+            a.age = record_set[3].convert<long>();
 
             return a;
         }

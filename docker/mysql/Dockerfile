@@ -15,6 +15,8 @@ RUN touch -a /var/log/mysql/general.log && chown mysql:adm /var/log/mysql/genera
 RUN touch -a /var/log/mysql/slow.log && chown mysql:adm /var/log/mysql/slow.log
 
 # Prepare database
-COPY commands.sql /etc/mysql/init.sql
-COPY run_sql.sh /etc/mysql/run_sql.sh
-CMD chmod +x /etc/mysql/run_sql.sh
+COPY init_db.sql /etc/mysql/init_db.sql
+COPY init_db.sh /etc/mysql/init_db.sh
+COPY print_users.sql /etc/mysql/print_users.sql
+COPY print_users.sh /etc/mysql/print_users.sh
+CMD chmod +x /etc/mysql/init_db.sh && chmod +x /etc/mysql/print_users.sh
