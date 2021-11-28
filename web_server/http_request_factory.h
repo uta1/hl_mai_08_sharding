@@ -39,7 +39,6 @@ using Poco::Util::OptionCallback;
 using Poco::Util::HelpFormatter;
 
 #include "handlers/user_handler.h"
-#include "handlers/message_handler.h"
 #include "handlers/web_page_handler.h"
 
 
