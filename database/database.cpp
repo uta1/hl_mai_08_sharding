@@ -33,6 +33,7 @@ namespace database{
     }
 
     std::string Database::sharding_hint(long from, long to){
+        std::cout << "sharding_hint..." << std::endl;
 
         std::string key;
 

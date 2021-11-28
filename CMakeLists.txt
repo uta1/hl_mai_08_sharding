@@ -27,7 +27,7 @@ link_directories("/usr/local/lib")
 add_executable(${EXAMPLE_BINARY} main.cpp 
                                  config/config.cpp 
                                  database/database.cpp
-                                 database/author.cpp
+                                 database/user.cpp
                                  database/message.cpp)
 
 

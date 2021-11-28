@@ -54,58 +54,6 @@ namespace database
         }
     }
 
-    void Author::preload(const std::string &file)
-    {
-        try
-        {
-
-            Poco::Data::Session session = database::Database::get().create_session();
-            std::string json;
-            std::ifstream is(file);
-            std::istream_iterator<char> eos;
-            std::istream_iterator<char> iit(is);
-            while (iit != eos)
-                json.push_back(*(iit++));
-            is.close();
-
-            Poco::JSON::Parser parser;
-            Poco::Dynamic::Var result = parser.parse(json);
-            Poco::JSON::Array::Ptr arr = result.extract<Poco::JSON::Array::Ptr>();
-
-            size_t i{0};
-            for (i = 0; i < arr->size(); ++i)
-            {
-                Poco::JSON::Object::Ptr object = arr->getObject(i);
-                std::string first_name = object->getValue<std::string>("first_name");
-                std::string last_name = object->getValue<std::string>("last_name");
-                std::string title = object->getValue<std::string>("title");
-                std::string email = object->getValue<std::string>("email");
-                Poco::Data::Statement insert(session);
-                insert << "INSERT INTO Author (first_name,last_name,email,title) VALUES(?, ?, ?, ?)",
-                    Poco::Data::Keywords::use(first_name),
-                    Poco::Data::Keywords::use(last_name),
-                    Poco::Data::Keywords::use(email),
-                    Poco::Data::Keywords::use(title);
-
-                insert.execute();
-            }
-
-            std::cout << "Inserted " << i << " records" << std::endl;
-        }
-
-        catch (Poco::Data::MySQL::ConnectionException &e)
-        {
-            std::cout << "connection:" << e.what() << std::endl;
-            throw;
-        }
-        catch (Poco::Data::MySQL::StatementException &e)
-        {
-
-            std::cout << "statement:" << e.what() << std::endl;
-            throw;
-        }
-    }
-
     Poco::JSON::Object::Ptr Author::toJSON() const
     {
         Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
