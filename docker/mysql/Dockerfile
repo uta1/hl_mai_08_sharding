@@ -13,3 +13,10 @@ COPY mysql.conf.d/ /etc/mysql/mysql.conf.d/
 RUN touch -a /var/log/mysql/error.log && chown mysql:adm /var/log/mysql/error.log
 RUN touch -a /var/log/mysql/general.log && chown mysql:adm /var/log/mysql/general.log
 RUN touch -a /var/log/mysql/slow.log && chown mysql:adm /var/log/mysql/slow.log
+
+# Prepare database
+COPY init_db.sql /etc/mysql/init_db.sql
+COPY init_db.sh /etc/mysql/init_db.sh
+COPY print_users.sql /etc/mysql/print_users.sql
+COPY print_users.sh /etc/mysql/print_users.sh
+CMD chmod +x /etc/mysql/init_db.sh && chmod +x /etc/mysql/print_users.sh
