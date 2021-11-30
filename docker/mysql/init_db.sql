@@ -6,4 +6,4 @@ create table if not exists users (
     last_name char(50) not null,
     age int not null
 );
-select * from users;
+create index ln_fn using btree on users(last_name, first_name);
